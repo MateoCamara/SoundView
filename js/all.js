@@ -30,6 +30,10 @@ let n_pages = 3;
 let n_pages_received = 0;
 let all_loaded = false;
 let last_selected_sound_id = undefined;
+let sound1 = []; //spectro generado tras la STFT en el vaeUtils
+let sound2 = []; //spectro antes de la STFT
+let spectrogramWidth = 128;
+let spectrogramHeight = 128;
 
 // t-sne and xy map
 let max_tsne_iterations = 500;
@@ -44,6 +48,8 @@ let map_xy_y_max = undefined;
 let map_xy_y_min = undefined;
 
 // Canvas and display stuff
+let spectrogram_canvas = document.getElementById("spectrogram-canvas");
+let ctxSpectrogram = spectrogram_canvas.getContext("2d");
 let canvas = document.querySelector("canvas");
 let ctx = canvas.getContext("2d");
 let w = window.innerWidth;
@@ -110,6 +116,9 @@ function start() {
   if (query == undefined || query == "") {
     query = default_query;
   }
+  
+  sound1 = [];
+  sound2 = [];
 
   let url =
     "https://freesound.org/apiv2/search/text/?query=" +
@@ -341,6 +350,7 @@ function load_data_from_fs_json(data) {
 
     getWaveformFromPreview(function (waveform) {
       let adjustedWaveform = adjustAudioToExpectedSize(waveform, 22050);
+      sound2.push(adjustedWaveform)
       sessionId += 1;
 
       // TODO
@@ -383,6 +393,7 @@ function checkSelectSound(x, y) {
     if (dist < min_dist) {
       min_dist = dist;
       selected_sound = sound;
+      spectro_selected_sound = sound2[i];
     }
     distancesArray.push(dist);
   }
@@ -395,7 +406,7 @@ function checkSelectSound(x, y) {
     }
   }
   if (min_dist < 0.02) {
-    selectSound(selected_sound);
+    selectSound(selected_sound, spectro_selected_sound);
   } else {
     let dim1LatentSpace = x * (map_xy_x_max - map_xy_x_min) + map_xy_x_min;
     let dim2LatentSpace =
@@ -469,7 +480,7 @@ function checkSelectSound(x, y) {
   }
 }
 
-function selectSound(selected_sound) {
+function selectSound(selected_sound, spectro_selected_sound) {
   selected_sound.selected = true;
   selected_sound.mod_amp = 5.0;
   if (MONO_MODE) {
@@ -480,7 +491,7 @@ function selectSound(selected_sound) {
     showGeneratedSoundInfo(selected_sound.waveform);
   } else {
     audio_manager.loadSound(selected_sound.id, selected_sound.preview_url);
-    showSoundInfo(selected_sound);
+    showSoundInfo(selected_sound, spectro_selected_sound);
   }
   last_selected_sound_id = selected_sound["id"];
   selected_sound.selected = false;
@@ -507,7 +518,7 @@ function getSoundFromId(sound_id) {
   }
 }
 
-function showSoundInfo(sound) {
+function showSoundInfo(sound, spectro_selected_sound) {
   let html = "";
   if (
     sound.image !== undefined &&
@@ -523,6 +534,25 @@ function showSoundInfo(sound) {
     sound.username +
     "</a>";
   document.getElementById("sound_info_box").innerHTML = html;
+  let colors = [];
+		for (let i = 0; i < 256; i++) {
+			let r = Math.floor(i * 255 / 255);
+			let g = Math.floor(i * 255 / 256);
+			let b = Math.floor(0 * 255 / 256);
+			colors.push("rgb(" + r + "," + g + "," + b + ")");
+		}
+
+  for (let i = 0; i < spectrogramWidth; i++) {
+    for (let j = 0; j < spectrogramHeight; j++) {
+      let index = i + j * spectrogramWidth;
+      let magnitude = spectro_selected_sound[index];
+  
+      let colorIndex = Math.floor(magnitude * 255);
+  
+      ctxSpectrogram.fillStyle = colors[colorIndex];
+      ctxSpectrogram.fillRect(i, j, 1, 1);
+    }
+  }
 }
 
 function showGeneratedSoundInfo(waveform) {

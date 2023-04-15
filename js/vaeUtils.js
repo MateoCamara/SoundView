@@ -97,17 +97,21 @@ function denormalizeSpec(normData, minVal, maxVal, minData, maxData) {
 function spectrogram(spectrogram, type = "2D") {
     let spectrogramResult = []
     let magSpec = [];
+    let fullSpectroSound = [];
     if (type === "2D") {
         for (let frame = 0; frame < spectrogram.length; frame++) {
             let magSpecAux = [];
             for (let index = 0; index < spectrogram[frame].length; index++) {
                 let magnitude = spectrogram[frame][index];
                 magnitude <= 0 ? magnitude = 0.00001: magnitude // check if it's zero or negative (convert to -100 db)
+                fullSpectroSound.push(magnitude)
                 let mag = 20 * math.log10(magnitude);        
                 magSpecAux.push(mag);
             }
             magSpec.push(magSpecAux);
         }
+        sound1.push(fullSpectroSound);
+        fullSpectroSound = [];
         let magSpecNorm = normalizeSpec(magSpec, 0, 1, -100, 0)
         spectrogramResult = magSpecNorm;
     }

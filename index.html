@@ -1,10 +1,16 @@
 <html>
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timbral Searching</title>
     <link rel="stylesheet" type="text/css" href="css/all.css">
     <link href='https://fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+        integrity="sha512-JvO69Jz5g5d5V5FLt60OvX9Xzg8iYF2QZCxMCaPmJfeDw5rq5d5yfxpZYyZYJDe9BUji17fIY2HBL+oZnM2Bw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
+
 <body onload="start();">
     <canvas></canvas>
 
@@ -71,6 +77,8 @@
     <div id="sound_info_box" class="box">
     </div>
 
+    <canvas id="spectrogram-canvas" class="box"></canvas>
+
     <div id="logo_box" class="box">
         AUDIO INTELLIMIXER
     </div>
@@ -101,4 +109,5 @@
     <script src="dist/fft.js"></script>
 
 </body>
+
 </html>

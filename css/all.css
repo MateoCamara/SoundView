@@ -21,6 +21,12 @@ canvas{
 	opacity: 0.9;
 }
 
+#spectrogram-canvas{
+	bottom: 120px;
+    margin-left: 80px;
+	transform: rotate(-90deg)
+}
+
 .box a {
 	color: #fff;
 }
