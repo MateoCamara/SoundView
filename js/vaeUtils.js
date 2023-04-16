@@ -103,6 +103,7 @@ function spectrogram(spectrogram, type = "2D") {
             let magSpecAux = [];
             for (let index = 0; index < spectrogram[frame].length; index++) {
                 let magnitude = spectrogram[frame][index];
+                fullSpectroSound.push(magnitude)
                 magnitude <= 0 ? magnitude = 0.00001: magnitude // check if it's zero or negative (convert to -100 db)
                 fullSpectroSound.push(magnitude)
                 let mag = 20 * math.log10(magnitude);        

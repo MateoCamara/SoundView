@@ -32,6 +32,8 @@ let all_loaded = false;
 let last_selected_sound_id = undefined;
 let sound1 = []; //spectro generado tras la STFT en el vaeUtils
 let sound2 = []; //spectro antes de la STFT
+let sound3 = [];
+let soundsWaveforms = [];
 let spectrogramWidth = 128;
 let spectrogramHeight = 128;
 
@@ -50,6 +52,8 @@ let map_xy_y_min = undefined;
 // Canvas and display stuff
 let spectrogram_canvas = document.getElementById("spectrogram-canvas");
 let ctxSpectrogram = spectrogram_canvas.getContext("2d");
+let canvasWave = document.getElementById('waveform-generated');
+let ctxWave = canvasWave.getContext('2d');
 let canvas = document.querySelector("canvas");
 let ctx = canvas.getContext("2d");
 let w = window.innerWidth;
@@ -119,6 +123,8 @@ function start() {
   
   sound1 = [];
   sound2 = [];
+  sound3 = [];
+  soundsWaveforms = [];
 
   let url =
     "https://freesound.org/apiv2/search/text/?query=" +
@@ -294,7 +300,7 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
 
 /* Sounds stuff */
 
-function SoundFactory(id, preview_url, analysis, url, name, username, image) {
+function SoundFactory(id, preview_url, analysis, url, name, username, imageSpec, imageWave) {
   this.x = Math.random();
   this.y = Math.random();
   this.rad = 15;
@@ -313,7 +319,8 @@ function SoundFactory(id, preview_url, analysis, url, name, username, image) {
   this.url = url;
   this.name = name;
   this.username = username;
-  this.image = image;
+  this.imageSpec = imageSpec;
+  this.imageWave = imageWave;
   this.generated = false;
 }
 
@@ -344,13 +351,16 @@ function load_data_from_fs_json(data) {
       (url = sound_json["url"]),
       (name = sound_json["name"]),
       (username = sound_json["username"]),
-      (image = sound_json["image"] || sound_json["images"]["spectral_m"])
+      (imageSpec = sound_json["image"] || sound_json["images"]["spectral_m"]),
+      (imageWave = sound_json["image"] || sound_json["images"]["waveform_m"])
+
     );
     sounds.push(sound);
 
     getWaveformFromPreview(function (waveform) {
       let adjustedWaveform = adjustAudioToExpectedSize(waveform, 22050);
       sound2.push(adjustedWaveform)
+      soundsWaveforms.push(adjustedWaveform);
       sessionId += 1;
 
       // TODO
@@ -367,7 +377,7 @@ function load_data_from_fs_json(data) {
         finalData.push(data);
       });
       let mcltspecTransposed = finalData[0].map((_, colIndex) =>
-        finalData.map((row) => row[colIndex])
+      finalData.map((row) => row[colIndex])
       );
       let mclt2Dspec = spectrogram(mcltspecTransposed);
       let { mu_latent_space, log_variance_latent_space } =
@@ -387,13 +397,16 @@ function checkSelectSound(x, y) {
   let min_dist = 9999;
   let selected_sound = false;
   let distancesArray = [];
+  let spectro_selected_sound = [];
+  let waveform_selected_Sound = [];
   for (i in sounds) {
     let sound = sounds[i];
     let dist = computeEuclideanDistance(sound.x, sound.y, x, y);
     if (dist < min_dist) {
       min_dist = dist;
       selected_sound = sound;
-      spectro_selected_sound = sound2[i];
+      spectro_selected_sound = sound1[i];
+      waveform_selected_Sound = soundsWaveforms[i];
     }
     distancesArray.push(dist);
   }
@@ -406,7 +419,7 @@ function checkSelectSound(x, y) {
     }
   }
   if (min_dist < 0.02) {
-    selectSound(selected_sound, spectro_selected_sound);
+    selectSound(selected_sound, spectro_selected_sound, waveform_selected_Sound);
   } else {
     let dim1LatentSpace = x * (map_xy_x_max - map_xy_x_min) + map_xy_x_min;
     let dim2LatentSpace =
@@ -480,7 +493,7 @@ function checkSelectSound(x, y) {
   }
 }
 
-function selectSound(selected_sound, spectro_selected_sound) {
+function selectSound(selected_sound, spectro_selected_sound, waveform_selected_Sound) {
   selected_sound.selected = true;
   selected_sound.mod_amp = 5.0;
   if (MONO_MODE) {
@@ -491,7 +504,7 @@ function selectSound(selected_sound, spectro_selected_sound) {
     showGeneratedSoundInfo(selected_sound.waveform);
   } else {
     audio_manager.loadSound(selected_sound.id, selected_sound.preview_url);
-    showSoundInfo(selected_sound, spectro_selected_sound);
+    showSoundInfo(selected_sound, spectro_selected_sound, waveform_selected_Sound);
   }
   last_selected_sound_id = selected_sound["id"];
   selected_sound.selected = false;
@@ -518,13 +531,15 @@ function getSoundFromId(sound_id) {
   }
 }
 
-function showSoundInfo(sound, spectro_selected_sound) {
+function showSoundInfo(sound, spectro_selected_sound, waveform_selected_Sound) {
   let html = "";
   if (
-    sound.image !== undefined &&
-    sound.image !== ""
+    sound.imageSpec !== undefined &&
+    sound.imageSpec !== "" && sound.imageWave !== undefined &&
+    sound.imageWave !== ""
   ) {
-    html += '<img src="' + sound.image + '"/ class="sound_image"><br>';
+    html += '<img src="' + sound.imageSpec + '"/ class="sound_image"><br>';
+    html += '<img src="' + sound.imageWave + '"/ class="sound_image"><br>';
   }
   html +=
     sound.name +
@@ -553,6 +568,23 @@ function showSoundInfo(sound, spectro_selected_sound) {
       ctxSpectrogram.fillRect(i, j, 1, 1);
     }
   }
+
+  let audioData = new Float32Array(waveform_selected_Sound);
+  canvasWave.width = document.getElementById('sound_info_box').offsetWidth;
+  canvasWave.height = 100;
+  document.getElementById('sound_info_box').appendChild(canvasWave);
+  drawWaveform(audioData);    
+}
+
+function drawWaveform(data) {
+  ctxWave.clearRect(0, 0, canvasWave.width, canvasWave.height);
+  ctxWave.strokeStyle = 'yellow';
+  ctxWave.beginPath();
+  ctxWave.moveTo(0, (1 + data[0]) * canvasWave.height / 2);
+  for (let i = 1; i < data.length; i++) {
+    ctxWave.lineTo(i * canvasWave.width / data.length, (1 + data[i]) * canvasWave.height / 2);
+  }
+  ctxWave.stroke();
 }
 
 function showGeneratedSoundInfo(waveform) {
