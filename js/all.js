@@ -23,6 +23,7 @@ let default_query = "footstep";
 let minDuration = 1;
 let maxDuration = 2;
 let sounds = [];
+let refPoints = [];
 let sampledSounds = [];
 let extra_descriptors = undefined;
 let map_features = undefined;
@@ -30,6 +31,12 @@ let n_pages = 3;
 let n_pages_received = 0;
 let all_loaded = false;
 let last_selected_sound_id = undefined;
+// let sound1 = []; //spectro generado tras la STFT en el vaeUtils
+// let sound2 = []; //spectro antes de la STFT
+// let sound3 = [];
+// let soundsWaveforms = [];
+// let spectrogramWidth = 256;
+// let spectrogramHeight = 64;
 
 // t-sne and xy map
 let max_tsne_iterations = 500;
@@ -338,9 +345,13 @@ function load_data_from_fs_json(data) {
       (image = sound_json["image"] || sound_json["images"]["spectral_m"])
     );
     sounds.push(sound);
+    const coords = [sound.x, sound.y]
+    refPoints.push(coords)
 
     getWaveformFromPreview(function (waveform) {
       let adjustedWaveform = adjustAudioToExpectedSize(waveform, 22050);
+      // sound2.push(adjustedWaveform)
+      // soundsWaveforms.push(waveform);
       sessionId += 1;
 
       // TODO
@@ -426,7 +437,8 @@ function checkSelectSound(x, y) {
     }
 
     multilateralDim = multilateralDim[0];
-
+    const coordsUnknownPoint = multilateralDim.slice(0,2);
+    multilateralizationExecution(refPoints, coordsUnknownPoint);
     // var result_array = [];
     // for (i = 0; i < 20; i++) {
     //     result_array.push((mu_latent_spaces[0][i] + mu_latent_spaces[1][i] + mu_latent_spaces[2][i]) / 3)
