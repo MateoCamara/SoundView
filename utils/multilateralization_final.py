@@ -1,18 +1,22 @@
 from this import d
 import numpy as np
+import random
 from math import sqrt
 import cmath
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 distances = []
+newDistances = []
 refPoints = []
 coordsUnknownPoint = []
 # distances = [3.857, 3.988, 3.497] # Replica paper
-# coordsUnknownPoint = [26.7726, -1.3389] # Replica paper
 # refPoints = [[27.297, -4.953, 1.47], [20.693, -4.849, 1.93], [22.59, 0.524, 1.2], [17.113, -3.003, 2.17], [22.554, 4.727, 1.77]] # Replica paper
-N1 = []
-N2 = []
+# coordsUnknownPoint = [26.7726, -1.3389] # Replica paper
+FinalSolution = []
+FinalSolution1 = []
+FinalSolution2 = []
+t = any
 t1 = any
 t2 = any
 A_segundoGrado = 0
@@ -22,13 +26,22 @@ x_max = 0
 x_min = 0
 y_max = 0
 y_min = 0
+z_max = 0
+z_min = 0
+w_max = 0
+w_min = 0
 
-# Ejemplos
-# refPoints = [[1, 5.2, 0.3, 9],[5, -3.6, -3, -1],[9, -10, 1, 3], [-2, 3.4, 0.1, 6.1], [-2.9, 10, -5.1, 3.9], [8, 5, -4, 0.7], [-1.4, -2, 3, 6.2]]
-# refPoints = [[3.12, -2.2, 1.3, -0.9],[-2.5, 2.6, 6.3, 1.9],[-5, 7.1, -2.1, 5.3], [1.1, 4.3, -5.2, 1.06]]
-refPoints = [[1, 5.2, 0.3, 9],[5, -3.6, -3, -1],[9, -10, 1, 3], [-2, 3.4, 0.1, 6.1]]
-# refPoints = [[1, 5.2, 0.3, 9],[5, -3.6, -3, -1],[9, -10, 1, 3]]
-coordsUnknownPoint = [7, 10, 4.1, 5.7]
+# coordsUnknownPoint = [7, 10]; #Conozco solo 2
+# coordsUnknownPoint = [7, 10, 2.1, -1.4]; #Conozco las 4
+
+# Generar puntos ancla aleatorios
+def generadorPuntosAnclaRandom(coords):
+    subarray = [random.uniform(-10, 10) for _ in range(coords)]
+    return subarray
+
+refPoints = [generadorPuntosAnclaRandom(4) for _ in range(8)]
+coordsUnknownPoint = generadorPuntosAnclaRandom(2)
+print(coordsUnknownPoint)
 
 # Matriz Identidad
 I = np.identity(len(refPoints[0]))
@@ -45,10 +58,27 @@ def calculateDistances():
     for i in range(len(coordsUnknownPoint)):
       value += (coords[i]-coordsUnknownPoint[i])**2
     s = sqrt(value)
-    # s = sqrt((coords[i]-coordsUnknownPoint[i])**2 + (coords[1]-coordsUnknownPoint[1])**2)
     distances.append(s)
       
   print(distances)
+
+def calculateNewDistances():
+  global newDistances
+  for coords in refPoints:
+    value = 0
+    if len(FinalSolution1) > 0:
+      for i in range(len(FinalSolution1)):
+        value += (coords[i]-FinalSolution1[i])**2
+      s = sqrt(value)
+      newDistances.append(s)
+    else:
+      for i in range(len(FinalSolution)):
+        value += (coords[i]-FinalSolution[i])**2
+      s = sqrt(value)
+      newDistances.append(s)
+      
+  print("Las primeras distancias calculadas: ",distances)
+  print("Las nuevas distancias calculadas: ",newDistances)
 
 # Generar las ecuaciones de A en función de los puntos de referencia
 def generateAEcs():
@@ -97,17 +127,15 @@ def secondGradeVariables(x_p, x_h):
 
 # Ec 2º Grado
 def solve_quadratic(a, b):
-  global t1, t2
-
-  solucion1 = (-b-cmath.sqrt(insideSqrt))/(2*a)
-  solucion2 = (-b+cmath.sqrt(insideSqrt))/(2*a)
+  global t, t1, t2
 
   if insideSqrt < 0:
-    t1 = solucion1.real
-    t2 = solucion2.real
+    solucion = (-b)/(2*a)
+    return [solucion]
   else:
-    t1 = solucion1.real
-    t2 = solucion2.real
+    solucion1 = (-b-cmath.sqrt(insideSqrt))/(2*a)
+    solucion2 = (-b+cmath.sqrt(insideSqrt))/(2*a)
+    return [solucion1.real, solucion2.real]
 
 def calculateDifferences(x1, x2):
   global d1, d2
@@ -153,6 +181,7 @@ x_p = A_pseudo_inv.dot(b)
 
 # SVD (Descomposición en valores singulares). U matriz unitaria. S matriz diagonal. VT matriz transpuesta conjugada.
 U, S, VT = np.linalg.svd(A)
+print("VT = ",VT)
 x_h = VT[-1] # x_h último vector en la matriz VT (matriz de vectores propios transpuestos)
 
 print("x_p =", x_p)
@@ -163,78 +192,117 @@ secondGradeVariables(x_p, x_h)
 insideSqrt = (B_segundoGrado**2)-(4*A_segundoGrado*C_segundoGrado)
 print("insideSqrt =", insideSqrt)
 
-solve_quadratic(A_segundoGrado, B_segundoGrado)
+ecSecondGradeSolution = solve_quadratic(A_segundoGrado, B_segundoGrado)
 
-print("t1 =", t1)
-print("t2 =", t2)
+if len(ecSecondGradeSolution) == 1:
+  sol = x_p + ecSecondGradeSolution*x_h
+  sol = sol[1:]
+  FinalSolution = sol.dot(I)
+  print("SOLUCION FINAL =", FinalSolution)
+else:
+  sol1 = x_p + ecSecondGradeSolution[0]*x_h
+  sol2 = x_p + ecSecondGradeSolution[1]*x_h
+  calculateDifferences(sol1, sol2)
+  sol1_copy = sol1
+  sol2_copy = sol2
+  sol1 = sol1[1:] # Me interesa quedarme con las coordenadas desconocidas, ya que las primeras lo son.
+  sol2 = sol2[1:]
+  print(sol1)
+  print(sol2)
+  FinalSolution1 = sol1.dot(I)
+  FinalSolution2 = sol2.dot(I)
+  print("SOLUCION FINAL 1 =", FinalSolution1)
+  print("SOLUCION FINAL 2 =", FinalSolution2)
 
-sol1 = x_p + t1*x_h
-sol2 = x_p + t2*x_h
 
-if len(sol1) != len(refPoints[0])+1:
-  raise ValueError("Se lía")
 
-calculateDifferences(sol1, sol2)
-sol1_copy = sol1
-sol2_copy = sol2
 
-sol1 = sol1[1:] # Me interesa quedarme con las coordenadas desconocidas, ya que las primeras lo son.
-sol2 = sol2[1:]
+print("Las coordenadas conocidas son: ", coordsUnknownPoint)
+calculateNewDistances()
 
-print(sol1)
-print(sol2)
-
-N1 = sol1.dot(I)
-N2 = sol2.dot(I)
-print("N1 =", N1)
-print("N2 =", N2)
-
-findSolution()
+# findSolution()
 
 # Representación gráfica
 
 # Calcular los límites del gráfico
 
 def generatePlots(refPoints):
-  global x_max, x_min, y_max, y_min, y_max
+  global x_max, x_min, y_max, y_min, z_max, z_min, w_max, w_min
 
-  resultado = []
+  refPointsXY = []
+  refPointsZW = []
   x_values = []
   y_values = []
+  z_values = []
+  w_values = []
 
   for subarray in refPoints:
-      resultado.append(subarray[:2])
+      refPointsXY.append(subarray[:2])
+      refPointsZW.append(subarray[:2])
 
-  for i, (x, y) in enumerate(resultado):
-    # if i > 2:
-    #   break
-    x_values.append(resultado[i][0] + distances[i])
-    x_values.append(resultado[i][0] - distances[i])
-    y_values.append(resultado[i][1] + distances[i])
-    y_values.append(resultado[i][1] - distances[i])
-    circle = plt.Circle((x, y), distances[i], color='b', fill=False)
-    ax.add_patch(circle)
-  
+  print(refPointsZW)
+  print(newDistances)
+
+  for i, (x, y) in enumerate(refPointsXY):
+        x_values.append(refPointsXY[i][0] + distances[i])
+        x_values.append(refPointsXY[i][0] - distances[i])
+        y_values.append(refPointsXY[i][1] + distances[i])
+        y_values.append(refPointsXY[i][1] - distances[i])
+        circle = plt.Circle((x, y), distances[i], color='b', fill=False)
+        ax1.add_patch(circle)
+
+  for i, (z, w) in enumerate(refPointsZW):
+      z_values.append(refPointsZW[i][0] + newDistances[i])
+      z_values.append(refPointsZW[i][0] - newDistances[i])
+      w_values.append(refPointsZW[i][1] + newDistances[i])
+      w_values.append(refPointsZW[i][1] - newDistances[i])
+      circle = plt.Circle((z, w), newDistances[i], color='b', fill=False)
+      ax2.add_patch(circle)
+
   x_max = max(x_values)
   x_min = min(x_values)
   y_max = max(y_values)
   y_min = min(y_values)
-  
-# Crear el gráfico
+
+  z_max = max(z_values)
+  z_min = min(z_values)
+  w_max = max(w_values)
+  w_min = min(w_values)
+
+# Crear los gráficos y los subplots
+fig, (ax1, ax2) = plt.subplots(1, 2)
+
+# Añadir las circunferencias al primer gráfico
 generatePlots(refPoints)
-fig, ax = plt.subplots()
+if len(FinalSolution2) > 0 :
+  ax1.plot(FinalSolution1[0], FinalSolution1[1], 'ro')
+  ax1.plot(FinalSolution2[0], FinalSolution2[1], 'yo')
+else:
+  ax1.plot(FinalSolution[0], FinalSolution[1], 'ro')
+ax1.plot(coordsUnknownPoint[0], coordsUnknownPoint[1], 'go')
+ax1.set_xlabel('x')
+ax1.set_ylabel('y')
 
-# Añadir las circunferencias al gráfico
+# Configurar los límites de los ejes del primer gráfico
+ax1.set_xlim(x_min, x_max)
+ax1.set_ylim(y_min, y_max)
+ax1.axis('equal')
 
-plt.plot(N1[0], N1[1], 'ro')
-plt.plot(N2[0], N2[1], 'yo')
-plt.xlabel('x')
-plt.ylabel('y')
+# Añadir las circunferencias al segundo gráfico
+if len(FinalSolution2) > 0 :
+  ax2.plot(FinalSolution1[0], FinalSolution1[1], 'ro')
+  ax2.plot(FinalSolution2[0], FinalSolution2[1], 'yo')
+else:
+  ax2.plot(FinalSolution[0], FinalSolution[1], 'ro')
+# ax2.plot(coordsUnknownPoint[2], coordsUnknownPoint[3], 'go')
+ax2.plot(coordsUnknownPoint[0], coordsUnknownPoint[1], 'go')
+ax2.set_xlabel('z')
+ax2.set_ylabel('w')
 
-# Configurar los ejes
-print("x_min es:", x_min, "x_max es:", x_max)
-print("y_min es:", y_min, "y_max es:", y_max)
-ax.set_xlim(x_min, x_max)
-ax.set_ylim(y_min, y_max)
-plt.axis('equal')
+# Configurar los límites de los ejes del segundo gráfico
+ax2.set_xlim(z_min, z_max)
+ax2.set_ylim(w_min, w_max)
+ax2.axis('equal')
+
+# Mostrar los gráficos
 plt.show()
