@@ -13,6 +13,7 @@ let log_variance_latent_spaces = [];
 let waveformImages = document.getElementById("waveform");
 let idGeneratedAudio = -1;
 let waveformAux;
+let canvasIndex = 0;
 
 // Audio stuff
 let audio_manager = new AudioManager();
@@ -585,6 +586,29 @@ function drawWaveform(data) {
     ctxWave.lineTo(i * canvasWave.width / data.length, (1 + data[i]) * canvasWave.height / 2);
   }
   ctxWave.stroke();
+}
+
+function selectSoundView() {
+  const canvasContainer = document.getElementById("canvasContainer");
+
+  if (canvasContainer.firstChild) {
+    canvasContainer.removeChild(canvasContainer.firstChild);
+  }
+
+  let canvasSwitch;
+  let ctxSwitch;
+
+  if (canvasIndex % 2 === 0) {
+    canvasSwitch = spectrogram_canvas;
+    ctxSwitch = ctxSpectrogram;
+  } else {
+    canvasSwitch = canvasWave;
+    ctxSwitch = ctxWave;
+  }
+
+  canvasContainer.appendChild(canvasSwitch);
+
+  canvasIndex++;
 }
 
 function showGeneratedSoundInfo(waveform) {

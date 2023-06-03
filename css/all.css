@@ -81,6 +81,22 @@ canvas{
 	border-radius: 5%;
 }
 
+#spectrogram-canvas{
+	display: none;
+}
+  
+#waveform-generated{
+	display: none;
+}
+
+#canvasContainer{
+	display: none;
+}
+
+#canvasButton {
+	display: none;
+}
+
 #logo_box {
 	top: 20px;
 	left: 20px;

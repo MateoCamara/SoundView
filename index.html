@@ -75,10 +75,15 @@
     </div>
 
     <div id="sound_info_box" class="box">
-        <canvas id="waveform-generated"></canvas>
+        <!-- <canvas id="waveform-generated"></canvas> -->
+        <div id="canvasContainer">
+            <canvas id="waveform-generated"></canvas>
+            <canvas id="spectrogram-canvas"></canvas>
+        </div>
+        <button id="canvasButton" onclick="selectSoundView()">Select view</button>
     </div>
 
-    <canvas id="spectrogram-canvas" class="box"></canvas>
+    <!-- <canvas id="spectrogram-canvas" class="box"></canvas> -->
 
     <div id="logo_box" class="box">
         AUDIO INTELLIMIXER
