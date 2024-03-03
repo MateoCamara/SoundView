@@ -156,7 +156,7 @@ function spectrogram(spectrogram, type = "2D") {
   return spectrogramResult;
 }
 
-function convertPredictedSpectrogramIntoAudio(
+async function convertPredictedSpectrogramIntoAudio(
   callback,
   predictedSpec,
   type = "2D",
@@ -191,11 +191,8 @@ function convertPredictedSpectrogramIntoAudio(
     reconstructedSpec.map((row) => row[colIndex])
   );
 
-  let signal = ispectrogramMCLT(
-    callback,
-    reconstructedSpecTransposed,
-    framelength
-  );
+  let signal = await griffinLim(reconstructedSpecTransposed, numIterations=100, windowLength=512, hopLength=256);
+  callback(signal)
 
   return signal;
 }
