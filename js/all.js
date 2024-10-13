@@ -6,9 +6,19 @@ const CLIENT_SECRET = "TEWsO3ETlZ8aDPuvWYfqPyhYo97sl5COg9xEz4mO";
 const REDIRECT_URL = "https://adrianbalda.github.io/Intellimixer/";
 let AUTHORIZATION_CODE;
 let accessToken;
-// const DEFAULT_TOKEN = "I7j6d2GhKndeNeAcJ4lnihzSpWP0YEQdfF2NSu6e";
 let loginRedirected = false;
 let loginSuccessful = 0;
+
+// Tutorial
+const tutorialPopup = document.getElementById('tutorial-popup');
+const openTutorialPopup = document.getElementById('open-tutorial-popup');
+const closeTutorialButton = document.getElementById('close-tutorial');
+// Tutorial FIN
+
+// Snackbar
+let snackbar = document.getElementById("snackbar");
+let snackbarMessage = document.getElementById("snackbarMessage");
+// Snackbar FIN
 
 //Menú Hamburguesa
 const menuButton = document.querySelector(".menu-button");
@@ -16,7 +26,18 @@ const menuOptions = document.querySelector(".menu-options");
 const menuContainer = document.querySelector(".menu-container");
 const menuHamburguesa = document.getElementById("menuHamburguesa");
 let menuVisible = false;
-// Menú Hamburguesa
+const queryForm = document.getElementById("query-form");
+const uploadVAEs = document.getElementById('upload-vaes-div');
+// Menú Hamburguesa FIN
+
+// Transformacion de sonidos
+const applyEffectsButton = document.getElementById('applyEffectsButton');
+const gainControl = document.getElementById('gainControl');
+const gainValue = document.getElementById('gainValue');
+const speedControl = document.getElementById('speedControl');
+const speedValue = document.getElementById('speedValue');
+const effectsPopup = document.getElementById('effectsPopup');
+// Transformacion de sonidos FIN
 
 // Para el espectrograma
 const heatmapColors = [
@@ -62,13 +83,15 @@ let MONO_MODE = true;
 // Repeated strings
 const DISPLAY_NONE = "none";
 const DISPLAY_BLOCK = "block";
+// Repeated strings
 
 // Sounds and content
 let default_query = "footstep";
 let minDuration = 1;
 let maxDuration = 2;
 let sounds = [];
-let currentSound = [];
+let selectedSound;
+let currentSoundSamples = [];
 let sampledSounds = [];
 let extra_descriptors = undefined;
 let map_features = undefined;
@@ -93,15 +116,8 @@ let map_xy_y_min = undefined;
 // Canvas and display stuff
 const popup = document.getElementById("loginPopup");
 const overlay = document.querySelector(".overlay");
-const playSoundButton = document.getElementById("play-sound-button");
-const transformInputs = document.querySelectorAll('.transform-inputs');
-const arrowButton = document.querySelector(".round");
 const soundInfoBox = document.getElementById('sound_info_box');
 const switchButton = document.getElementById("switch-images-button");
-const sidebar = document.getElementById("sidebar");
-const transformationInputs = document.querySelector(".transform-inputs");
-const queryForm = document.getElementById("query-form");
-const uploadVAEs = document.getElementById('upload-vaes-div');
 let canvasWaveform = document.getElementById('waveform-generated');
 let progressContainer = document.getElementById('progressContainer');
 let canvasProgress = document.getElementById('canvasProgress');
@@ -210,14 +226,45 @@ function getSounds(){
   );  
 }
 
-transformInputs.forEach((input, index) => {
-  const inputListener = () => {
-    const value = parseFloat(input.value);
-    applyEffects(index, value);
-  };
+document.addEventListener('DOMContentLoaded', function() {
+  closeTutorialButton.addEventListener('click', function() {
+      tutorialPopup.style.display = 'none';
+  });
 
-  input.addEventListener('input', inputListener);
+  openTutorialPopup.addEventListener('click', function() {
+    tutorialPopup.style.display = 'flex';
+  });
 });
+
+// Efectos de Sonido
+applyEffectsButton.addEventListener('click', () => {
+  effectsPopup.style.display = DISPLAY_BLOCK;
+  overlay.style.display = DISPLAY_BLOCK;
+  speedControl.value = 1;
+  speedValue.textContent = `x1.0`;
+  gainControl.value = 1;
+  gainValue.textContent = `1.0`;
+
+  if(currentSoundSamples.length){
+      let audioData = new Float32Array(currentSoundSamples);
+      canvasProgress.width = progressContainer.offsetWidth;
+      canvasProgress.height = window.innerWidth * 0.1;
+      drawWaveform(audioData, canvasProgress, ctxProgress);    
+  }
+});
+
+overlay.addEventListener('click', () => {
+  effectsPopup.style.display = 'none';
+  overlay.style.display = 'none';
+  if (audioSource) {
+      audioSource.stop(); // Si se esta reproduciendo el audio al salir de la transformacion de sonidos, se para.
+  }    
+});
+
+effectsPopup.addEventListener('click', (event) => {
+  event.stopPropagation();
+});
+// Efectos de Sonido FIN
 
 switchButton.addEventListener("click", function() {
   canvasWaveform.style.display = (canvasWaveform.style.display === DISPLAY_NONE) ? DISPLAY_BLOCK : DISPLAY_NONE;
@@ -248,12 +295,12 @@ window.addEventListener("load", async function () {
 
 function showUser(userName) {
   const userNameElement = document.getElementById("userName");
-  const logout_user_container = document.getElementById("logout-user-container");
+  const username_container = document.getElementById("username-container");
   const login_container = document.getElementById("login-container");
 
   login_container.style.display = DISPLAY_NONE;
 
-  logout_user_container.style.display = DISPLAY_BLOCK;
+  username_container.style.display = DISPLAY_BLOCK;
   userNameElement.textContent = userName;
 }
 
@@ -263,14 +310,6 @@ window.onload = function () {
 
   popup.style.display = DISPLAY_BLOCK;
 };
-
-arrowButton.addEventListener("click", function() {
-  sidebar.classList.toggle("expanded");
-  arrowButton.classList.toggle("expanded");
-
-  const expanded = sidebar.classList.contains("expanded");
-  slideButton(expanded)
-});
 
 let formSubmitHandler = function formSubmitHandler(event) {
   event.preventDefault();
@@ -305,13 +344,27 @@ document.getElementById('new-sound').addEventListener('click', function(event) {
   hideMenu();
 });
 
-document.getElementById('submit-btn').addEventListener('click', formSubmitHandler);
+document.getElementById('send-sound-request').addEventListener('click', formSubmitHandler);
 
 document.getElementById('upload-vaes').addEventListener('click', function(event) {
   event.preventDefault();
   showUploadVAEs();
   hideMenu();
 });
+
+function showSnackbar(message) {
+  snackbarMessage.innerHTML = message;
+  snackbar.className = "show";
+  setTimeout(function() { 
+    if (snackbar.className === "show") {
+      snackbar.className = snackbar.className.replace("show", ""); 
+    }
+  }, 10000);
+}
+
+function closeSnackbar() {
+  snackbar.className = snackbar.className.replace("show", "");
+}
 
 function changeAxisAttribute() {
   all_loaded = false;
@@ -478,103 +531,118 @@ function SoundFactoryGeneratedAudios(id, waveform, x, y, latentSpace) {
 }
 
 function load_data_from_fs_json(data) {
-  let max = data["results"].length;
+  let max = data.results.length;
   let i = 0;
-  let interval = setInterval(function () {
-    let sound_json = data["results"][i];
-    let sound = new SoundFactory(
-      (id = sound_json["id"]),
-      (preview_url =
-        sound_json["audio"] || sound_json["previews"]["preview-hq-mp3"]),
-      (analysis = sound_json["analysis"]),
-      (url = sound_json["url"]),
-      (name = sound_json["name"]),
-      (username = sound_json["username"]),
-      // (image = sound_json["image"] || sound_json["images"]["spectral_m"])
-      (image = [sound_json["images"]["spectral_m"], sound_json["images"]["waveform_m"]])
-    );
-    sounds.push(sound);
-
-    getWaveformFromPreview(function (waveform) {
-      let adjustedWaveform = adjustAudioToExpectedSize(waveform, 22050);
-      sessionId += 1;
-      soundsWaveforms.push(waveform);
-
-      // TODO
-      const signal = tf.tensor1d(adjustedWaveform);
-      const frameLength = 512;
-      const frameStep = Math.floor(frameLength / 4); // Si no, con 248 se obtiene 64x256
-      const fftLength = 256;
-      const signalTransformed = tf.signal
-        .stft(signal, frameLength, frameStep, fftLength)
-        .arraySync();
-      const finalData = [];
-      signalTransformed.forEach((element) => {
-        const data = element.slice(0, 256);
-        finalData.push(data);
-      });
-      
-      if (finalData.length > 64) {
-        finalData.splice(64);
-      } else if (finalData.length < 64) {
-        const numRowsToAdd = 64 - finalData.length;
-        const lastRow = finalData[finalData.length - 1];
-        for (let i = 0; i < numRowsToAdd; i++) {
-          finalData.push(lastRow);
-        }
+  try{
+    if(!data.results.length){
+      let querySoundsRequested = document.getElementById("query_terms_input").value;
+      if(!querySoundsRequested){
+        querySoundsRequested = default_query;
       }
-      let mcltspecTransposed = finalData[0].map((_, colIndex) =>
-        finalData.map((row) => row[colIndex])
-      );
-      
-      // Para el espectrograma
-      const stftAbs = tf.abs(mcltspecTransposed);
-
-      // Convertir a decibelios (escala logarítmica)
-      const stftDb = tf.tidy(() => {
-        const minAmp = tf.max(stftAbs).div(1e6).clipByValue(1, Infinity);
-        const logSpec = tf.log(stftAbs.add(minAmp));
-        return logSpec.mul(10).div(tf.log(tf.scalar(10)));
-      });
-                  
-      // Obtener los valores de amplitud del espectrograma
-      const stftData = stftDb.arraySync();
-      dBData.push(stftData);
-      maxValSoundsDB.push(tf.max(stftData).dataSync()[0]);
-      // Para el espectrograma
-
-      let mclt2Dspec = spectrogram(mcltspecTransposed);
-      let { mu_latent_space, log_variance_latent_space } =
-        encodeAudio(mclt2Dspec);
-      let latent_space_size = mu_latent_space.length;
-      mu_latent_spaces.push(mu_latent_space);
-      log_variance_latent_spaces.push(log_variance_latent_space);
-    }, sound.preview_url);
-    i++;
-    if (i == max) {
-      clearInterval(interval);
+      const message = `Couldn´t find "${querySoundsRequested}" sounds in Freesound.`;
+      showSnackbar(message + " Please, try again with another sound!");
+      throw new Error(message)
     }
-  }, 1000);
+    let interval = setInterval(function () {
+      let sound_json = data.results[i];
+      let sound = new SoundFactory(
+          (id = sound_json.id),
+          (preview_url =
+            sound_json.audio || sound_json.previews["preview-hq-mp3"]),
+          (analysis = sound_json.analysis),
+          (url = sound_json.url),
+          (name = sound_json.name),
+          (username = sound_json.username),
+          // (image = sound_json.images || sound_json.images.spectral_m)
+          (image = [sound_json.images.spectral_m, sound_json.images.waveform_m])
+      );
+      sounds.push(sound);
+
+      getWaveformFromPreview(function (waveform) {
+        let adjustedWaveform = adjustAudioToExpectedSize(waveform, 22050);
+        sessionId += 1;
+        soundsWaveforms.push(waveform);
+
+        // TODO
+        const signal = tf.tensor1d(adjustedWaveform);
+        const frameLength = 512;
+        const frameStep = Math.floor(frameLength / 4); // Si no, con 248 se obtiene 64x256
+        const fftLength = 256;
+        const signalTransformed = tf.signal
+          .stft(signal, frameLength, frameStep, fftLength)
+          .arraySync();
+        const finalData = [];
+        signalTransformed.forEach((element) => {
+          const data = element.slice(0, 256);
+          finalData.push(data);
+        });
+        
+        if (finalData.length > 64) {
+          finalData.splice(64);
+        } else if (finalData.length < 64) {
+          const numRowsToAdd = 64 - finalData.length;
+          const lastRow = finalData[finalData.length - 1];
+          for (let i = 0; i < numRowsToAdd; i++) {
+            finalData.push(lastRow);
+          }
+        }
+        let mcltspecTransposed = finalData[0].map((_, colIndex) =>
+          finalData.map((row) => row[colIndex])
+        );
+        
+        // Para el espectrograma
+        const stftAbs = tf.abs(mcltspecTransposed);
+
+        // Convertir a decibelios (escala logarítmica)
+        const stftDb = tf.tidy(() => {
+          const minAmp = tf.max(stftAbs).div(1e6).clipByValue(1, Infinity);
+          const logSpec = tf.log(stftAbs.add(minAmp));
+          return logSpec.mul(10).div(tf.log(tf.scalar(10)));
+        });
+                    
+        // Obtener los valores de amplitud del espectrograma
+        const stftData = stftDb.arraySync();
+        dBData.push(stftData);
+        maxValSoundsDB.push(tf.max(stftData).dataSync()[0]);
+        // Para el espectrograma
+
+        let mclt2Dspec = spectrogram(mcltspecTransposed);
+        let { mu_latent_space, log_variance_latent_space } =
+          encodeAudio(mclt2Dspec);
+        let latent_space_size = mu_latent_space.length;
+        mu_latent_spaces.push(mu_latent_space);
+        log_variance_latent_spaces.push(log_variance_latent_space);
+      }, sound.preview_url);
+      i++;
+      if (i == max) {
+        clearInterval(interval);
+      }
+    }, 1000);
+  }catch(error){
+    console.log(error.message)
+  }
 }
 
 function checkSelectSound(x, y) {
+  applyEffectsButton.style.display = DISPLAY_BLOCK;
   let min_dist = 9999;
   let selected_sound = false;
   let distancesArray = [];
   let spectro_selected_sound = [];
   let max_value_spectro = [];
   let waveform_selected_Sound = [];
-  currentSound = [];
+  currentSoundSamples = [];
   for (i in sounds) {
     let sound = sounds[i];
     let dist = computeEuclideanDistance(sound.x, sound.y, x, y);
     if (dist < min_dist) {
       min_dist = dist;
       selected_sound = sound;
+      selectedSound = sound;
       spectro_selected_sound = dBData[i];
       max_value_spectro = maxValSoundsDB[i];
       waveform_selected_Sound = soundsWaveforms[i];
-      currentSound = soundsWaveforms[i];
+      currentSoundSamples = soundsWaveforms[i];
     }
     distancesArray.push(dist);
   }
@@ -584,6 +652,7 @@ function checkSelectSound(x, y) {
     if (dist < min_dist) {
       min_dist = dist;
       selected_sound = sound;
+      selectedSound = sound;
     }
   }
   if (min_dist < 0.02) {
@@ -674,7 +743,7 @@ function selectSound(selected_sound, spectro_selected_sound, max_value_spectro, 
     audio_manager.loadSound(selected_sound.id, selected_sound.preview_url);
     showSoundInfo(selected_sound, spectro_selected_sound, max_value_spectro, waveform_selected_Sound);
   }
-  last_selected_sound_id = selected_sound["id"];
+  last_selected_sound_id = selected_sound.id;
   selected_sound.selected = false;
   selected_sound.mod_amp = default_point_modulation;
 }
@@ -752,17 +821,17 @@ function drawWaveform(data, waveCanvas, waveCtx) {
 function updateProgress(progress) {
   const progressColor = 'orange';
 
-  drawWaveform(currentSound, canvasProgress, ctxProgress)
+  drawWaveform(currentSoundSamples, canvasProgress, ctxProgress)
 
   // Pintar progreso en color naranja
   ctxProgress.strokeStyle = progressColor;
   ctxProgress.beginPath();
-  ctxProgress.moveTo(0, (1 + currentSound[0]) * canvasProgress.height / 2);
+  ctxProgress.moveTo(0, (1 + currentSoundSamples[0]) * canvasProgress.height / 2);
 
-  const progressIndex = Math.floor(progress * currentSound.length);
+  const progressIndex = Math.floor(progress * currentSoundSamples.length);
   for (let i = 1; i <= progressIndex; i++) {
-    const x = i * canvasProgress.width / currentSound.length;
-    const y = (1 + currentSound[i]) * canvasProgress.height / 2;
+    const x = i * canvasProgress.width / currentSoundSamples.length;
+    const y = (1 + currentSoundSamples[i]) * canvasProgress.height / 2;
     ctxProgress.lineTo(x, y);
   }
   ctxProgress.stroke();

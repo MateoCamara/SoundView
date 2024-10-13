@@ -139,6 +139,54 @@ canvas {
     height: 4.5vw;
 }
 
+#source_type_query_box {
+  right: 20px;
+  top: 400px;
+}
+
+#instructions_box {
+  right: 1vw;
+  bottom: 1vw;
+  text-align: right;
+  pointer-events: none;
+}
+
+#x_axis_box {
+  width: 100%;
+  bottom: 20px;
+  text-align: center;
+  font-size: 22px;
+  pointer-events: none;
+}
+
+#y_axis_box {
+  height: 100%;
+  left: 20px;
+  writing-mode: vertical-rl;
+  text-align: center;
+  font-size: 22px;
+  pointer-events: none;
+}
+
+#sound_info_box {
+	left: 1vw;
+	flex-wrap: wrap; 
+  bottom: 0.2vw;
+  text-align: left;
+  width: 30vw;
+	display: flex;
+}
+
+#logo_box {
+  top: 20px;
+  left: 20px;
+  width: 200px;
+  pointer-events: none;
+  font-weight: bold;
+  font-size: 30px;
+}
+
+/* Menu hamburguesa */
 #menu-user-container {
 	display: flex;
 	height: 2.5vw;
@@ -148,30 +196,8 @@ canvas {
 	flex-basis: 50%;
 }
 
-#logout-column {
-	flex-basis: 20%;
-}
-
 #menu-column {
 	flex-basis: 30%;
-}
-
-.logout-style {
-	display: none;
-}
-
-#logoutButton {
-	border: 2px solid white;
-	border-radius: 0.7vw;
-	background-color: transparent;
-	color: white;
-	width: 110%;
-	height: 1.6vw;
-}
-
-#logoutButton:hover {
-  box-shadow: 0 0 10px 0 #00d7c3 inset, 0 0 20px 2px #00d7c3;
-  border: 3px solid #00d7c3;
 }
 
 #query_box {
@@ -233,53 +259,49 @@ canvas {
   background-color: #444;
 }
 
-#source_type_query_box {
-  right: 20px;
-  top: 400px;
+.username-style {
+	display: none;
 }
 
-#instructions_box {
-  right: 1vw;
-  bottom: 1vw;
-  text-align: right;
-  pointer-events: none;
-}
-
-#x_axis_box {
-  width: 100%;
-  bottom: 20px;
+/* Boton pedir sonidos a Freesound */
+.request-sounds-button {
+  margin-top: 15px;
+  background-color: transparent;
+  border: 3px solid #bacbd4;
+  border-radius: 30px;
+  -webkit-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+  color: #bacbd4;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 13px;
+  line-height: 29px;
+  padding: 0 10px 0 11px;
+  position: relative;
   text-align: center;
-  font-size: 22px;
-  pointer-events: none;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  width: 100px;
 }
 
-#y_axis_box {
-  height: 100%;
-  left: 20px;
-  writing-mode: vertical-rl;
-  text-align: center;
-  font-size: 22px;
-  pointer-events: none;
+.request-sounds-button:hover:enabled {
+  box-shadow: 0 0 10px 0 #00d7c3 inset, 0 0 20px 2px #00d7c3;
+  border: 3px solid #00d7c3;
 }
 
-#sound_info_box {
-	left: 1vw;
-	flex-wrap: wrap; 
-  bottom: 0.2vw;
-  text-align: left;
-  width: 30vw;
-	display: flex;
+button:disabled,
+button[disabled] {
+  border: 1px solid #999999;
+  color: #666666;
 }
+/* Boton pedir sonidos a Freesound FIN */
 
-#logo_box {
-  top: 20px;
-  left: 20px;
-  width: 200px;
-  pointer-events: none;
-  font-weight: bold;
-  font-size: 30px;
-}
-
+/* Sound duration range */
 #query_terms_input {
   width: 150px;
   padding: 7px;
@@ -306,42 +328,6 @@ canvas {
   height: 30px;
 }
 
-.time-button {
-  margin-top: 15px;
-  background-color: transparent;
-  border: 3px solid #bacbd4;
-  border-radius: 30px;
-  -webkit-transition: all 0.15s ease-in-out;
-  transition: all 0.15s ease-in-out;
-  color: #bacbd4;
-  box-sizing: border-box;
-  cursor: pointer;
-  display: inline-block;
-  font-family: "Amazon Ember", sans-serif;
-  font-size: 13px;
-  line-height: 29px;
-  padding: 0 10px 0 11px;
-  position: relative;
-  text-align: center;
-  text-decoration: none;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-  vertical-align: middle;
-  width: 100px;
-}
-
-.time-button:hover:enabled {
-  box-shadow: 0 0 10px 0 #00d7c3 inset, 0 0 20px 2px #00d7c3;
-  border: 3px solid #00d7c3;
-}
-
-button:disabled,
-button[disabled] {
-  border: 1px solid #999999;
-  color: #666666;
-}
-
 .error {
   font-weight: bold;
   font-family: "Times New Roman", Times, serif;
@@ -356,6 +342,9 @@ button[disabled] {
   border: 1px solid #a33a3a;
   display: none;
 }
+/* Sound duration range FIN */
+
+/* Menu hamburguesa FIN */
 
 .axis {
   margin-top: 5%;
@@ -397,6 +386,7 @@ button[disabled] {
   border: 0px;
 }
 
+/* Caja para contener los logs */
 #info_placeholder {
   position: fixed;
   bottom: 15%;
@@ -427,6 +417,7 @@ button[disabled] {
 #info_placeholder::-webkit-scrollbar-thumb:hover {
   background-color: #333;
 }
+/* Caja para contener los logs FIN */
 
 #source_placeholder {
   height: 30px;
@@ -451,228 +442,210 @@ br {
   margin: 5px 0;
 }
 
-/* Lateral menu for sounds transformations */
-#sidebar {
-	position: fixed;
-	width: 0;
-	height: 35%;
-	top: 30%;
-	right: 0;
-	background-color: rgb(0, 0, 0);
-	transition: width 0.5s;
-	border-radius: 5%;
-}
-
-#sidebar.expanded {
-  width: 20%;
-  top: 16vw;
-  height: 15vw;
-  border-radius: 5%;
-  border: 2px solid #fff;
-}
-
-.transformation-tittle {
-	top: 3%;
-  text-align: center;
-  position: relative;
-  font-size: 120%;
-}
-
-#play-sound-button {
-  position: relative;
-  left: -15%;
-  top: 3vw;
-  height: 20%;
-}
-
-.play-icon{
-  border-radius: 50%;
-}
-
-.play-icon:hover {
-  box-shadow: 0 0 10px 0 #00d7c3 inset, 0 0 20px 2px #00d7c3;
-}
-
 .canvasProgress {
   top: 10%;
   /* display: block; */
 }
 
-.waveform-progress {
-  top: 10%
-}
-
-.inputs-containers {
-	width: 75%;
-	float: right;
-	position: relative;
-	top: 35%;
+/* Tutorial Popup */
+.tutorial-popup {
   display: flex;
-}
-
-.transform-inputs {
-  appearance: slider-vertical;
-  width: 8%;
-  height: 38%;
-  margin: 5%;
-}
-
-/* Para el texto de debajo de los inputs */
-/* .input-text {
-    text-align: center;
-    position: relative;
-    font-size: 60%;
-    width: 10%;
-    left: 27%;
-    top: 88%;
-} */
-
-#sidebar .transform-inputs {
-  overflow: hidden;
-}
-
-/* Slide button for sounds transformations */
-.center-con {
-  display: flex;
-  top: 45%;
+  justify-content: center;
+  align-items: center;
   position: fixed;
-  margin-left: 13%;
-}
-
-.round {
-  position: relative;
-  right: 15%;
-  border: 2px solid #fff;
-  width: 3vw;
-  height: 3vw;
-  border-radius: 100%;
-  transition: 0.5s;
-}
-
-.round.expanded {
-  transform: translateX(-21vw);
-  transition: 0.5s;
-}
-
-#cta {
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.tutorial-popup-content {
+  background-color: white;
+  padding: 5vw;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 600px;
+  max-height: 80%;
+  overflow-y: auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-popup-content h2 {
+  font-size: 2vw;
+  font-weight: bold;
+  margin-bottom: 2vw;
+  text-align: center;
+}
+
+.tutorial-popup-text {
+  margin-bottom: 10%;
+  font-size: 1vw !important;
+  text-align: justify;
+}
+
+.tutorial-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 1vw;
+  border: none;
+  border-radius: 5%;
   cursor: pointer;
-  position: absolute;
+  display: block;
+  margin: 0 auto;
 }
 
-#cta .arrow {
-  left: 20%;
+.tutorial-button:hover {
+  background-color: #45a049;
 }
-.arrow {
-  position: absolute;
-  bottom: 0;
-  margin-left: 0px;
-  width: 1vw;
-  height: 1vw;
-  background-size: contain;
-  top: 1vw;
+/* Tutorial Popup FIN */
+
+/* Boton de efectos */
+#applyEffectsButton{
+	display: none;
 }
-.second {
-  margin-left: 8px;
-}
-.next {
-  background-image: url(data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHN0eWxlPi5zdDB7ZmlsbDojZmZmfTwvc3R5bGU+PHBhdGggY2xhc3M9InN0MCIgZD0iTTMxOS4xIDIxN2MyMC4yIDIwLjIgMTkuOSA1My4yLS42IDczLjdzLTUzLjUgMjAuOC03My43LjZsLTE5MC0xOTBjLTIwLjEtMjAuMi0xOS44LTUzLjIuNy03My43UzEwOSA2LjggMTI5LjEgMjdsMTkwIDE5MHoiLz48cGF0aCBjbGFzcz0ic3QwIiBkPSJNMzE5LjEgMjkwLjVjMjAuMi0yMC4yIDE5LjktNTMuMi0uNi03My43cy01My41LTIwLjgtNzMuNy0uNmwtMTkwIDE5MGMtMjAuMiAyMC4yLTE5LjkgNTMuMi42IDczLjdzNTMuNSAyMC44IDczLjcuNmwxOTAtMTkweiIvPjwvc3ZnPg==);
-  transform: rotate(180deg);
+/* Boton de efectos FIN */
+
+/* Popup transformacion de sonidos */
+.sound-effects-popup {
+	display: none;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 20px;
+	background-color: #706f6f;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	z-index: 2;
+	height: 50%;
+  width: 40%;
 }
 
-@keyframes bounceAlpha {
-  0% {
-    opacity: 1;
-    transform: translateX(0px) scale(1) rotate(180deg);
+.overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	z-index: 1;
+}
+
+.columns {
+	display: flex;
+	width: 100%;
+	top: 60%;
+  position: relative;
+}
+
+.column {
+	flex: 1;
+	padding: 10px;
+}
+
+#play-sound-button {
+	top: 10%;
+	text-align: center;
+	margin: 5%
+}
+
+.play-icon {
+	width: 50px;
+	height: 50px;
+	cursor: pointer;
+  border-radius: 50%;
+}
+
+.waveform-progress {
+	top: 20%
+}
+
+.transformation-tittle {
+  text-align: center;
+  position: relative;
+  font-size: 120%;
+}
+
+.controls-column {
+  justify-content: center;
+  margin-top: 1%;
+}
+
+.control-group {
+  margin-bottom: 5%;
+}
+/* Popup transformacion de sonidos FIN */
+
+/* Snackbar when no sounds are found in Freesound */
+#snackbar {
+  visibility: hidden;
+  max-width: 90%;
+  margin: 0 auto;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 2px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  bottom: 8%;
+  font-size: 17px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#snackbar.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 9.5s;
+  animation: fadein 0.5s, fadeout 0.5s 9.5s;
+}
+
+#closeSnackbar {
+  background: none;
+  color: #fff;
+  border: none;
+  font-size: 17px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 8%; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 8%; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 8%; opacity: 1;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 8%; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+
+@media only screen and (max-width: 600px) {
+  #snackbar {
+    font-size: 14px;
+    padding: 12px;
+    max-width: 95%;
   }
-  25% {
-    opacity: 0;
-    transform: translateX(-10px) scale(0.9) rotate(180deg);
-  }
-  26% {
-    opacity: 0;
-    transform: translateX(0px) scale(0.9) rotate(180deg);
-  }
-  55% {
-    opacity: 1;
-    transform: translateX(-10px) scale(1) rotate(180deg);
+
+  #closeSnackbar {
+    font-size: 14px;
+    margin-left: 5px;
   }
 }
-
-.bounceAlpha {
-  animation-name: bounceAlpha;
-  animation-duration: 1.4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-.arrow.first.bounceAlpha {
-  animation-name: bounceAlpha;
-  animation-duration: 1.4s;
-  animation-delay: 0.2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-.round:hover .arrow {
-  animation-name: bounceAlpha;
-  animation-duration: 1.4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-.round:hover .arrow.first {
-  animation-name: bounceAlpha;
-  animation-duration: 1.4s;
-  animation-delay: 0.2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-@keyframes bounceAlpha-expanded {
-  0% {
-    opacity: 1;
-    transform: translateX(0px) scale(1);
-  }
-  25% {
-    opacity: 0;
-    transform: translateX(10px) scale(0.9);
-  }
-  26% {
-    opacity: 0;
-    transform: translateX(0px) scale(0.9);
-  }
-  55% {
-    opacity: 1;
-    transform: translateX(10px) scale(1);
-  }
-}
-
-.round.expanded ~ #cta .arrow.first.next {
-  animation-name: bounceAlpha-expanded !important;
-}
-
-.round.expanded ~ #cta .arrow.first.next {
-  animation-name: bounceAlpha-expanded !important;
-}
-
-.arrow.first.bounceAlpha {
-  animation-name: bounceAlpha-expanded;
-  animation-duration: 1.4s;
-  animation-delay: 0.2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-.round.expanded:hover .arrow {
-  animation-name: bounceAlpha-expanded;
-  animation-duration: 1.4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-.round.expanded:hover .arrow.first {
-  animation-name: bounceAlpha-expanded;
-  animation-duration: 1.4s;
-  animation-delay: 0.2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
+/* Snackbar when no sounds are found in Freesound FIN */

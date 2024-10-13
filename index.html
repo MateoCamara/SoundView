@@ -7,7 +7,7 @@
 </head>
 <body onload="start();">
     <canvas></canvas>
-    <div class="overlay" id="overlay"></div>
+    <!-- <div class="overlay" id="overlay"></div> -->
     <div id="loginPopup" class="popup">
         <div class="popup-content">
             <img src="./img/Freesound_website_logo.png" id="freesound-logo">
@@ -18,10 +18,28 @@
         </div>
     </div>
 
+    <div id="tutorial-popup" class="tutorial-popup">
+        <div class="tutorial-popup-content">
+            <h2>Instrucciones</h2>
+            <div class="tutorial-popup-text">
+                <p>Bienvenido a Intellimixer!!</p>
+                <br>
+                <p>Tal vez te venga bien una ayudita antes de empezar a utilizarlo. Te haré una breve descripción del proyecto y su flujo principal.</p>
+                <br>
+                <p>Click on points to listen to sounds<br>
+                    Click on the area to generate new sounds<br>
+                    Click + drag to navigate the map<br>
+                    Scroll wheel to zoom
+                </p>
+                <br>    
+            </div>
+            <button id="close-tutorial" class="tutorial-button">Entendido</button>
+        </div>
+    </div>
 
     <div id="query_box" class="box">
         <div id="menu-user-container">
-            <div id="logout-user-container" class="logout-style">
+            <div id="username-container" class="username-style">
                 <div id="user-column">
                   <div id="userContainer">
                     Bienvenido, <span id="userName"></span>
@@ -38,6 +56,7 @@
                 <ul id="menuHamburguesa" class="menu-options">
                   <li id="new-sound"><a href="#">New Sound</a></li>
                   <li id="upload-vaes"><a href="#">Upload VAE´s</a></li>
+                  <li id="open-tutorial-popup"><a href="#">Help</a></li>
                 </ul>
               </div>
             </div>
@@ -47,13 +66,13 @@
             <form>
                 <input id="query_terms_input" type="text" placeholder="Footstep">
                 <p><br>Select minimum sounds duration (in seconds)</p>
-                <input type="number" min="1" max="14" oninput="checkDurations()" id="query_min_time_input"
+                <input type="number" min="1" max="58" oninput="checkDurations()" id="query_min_time_input"
                     placeholder="1">
                 <p><br>Select maximum sounds duration (in seconds)</p>
-                <input type="number" min="2" max="15" oninput="checkDurations()" id="query_max_time_input"
+                <input type="number" min="2" max="59" oninput="checkDurations()" id="query_max_time_input"
                     placeholder="2">
                 <div>
-                    <button type="submit" id="submit-btn" class="time-button">Lets Goo!</button>
+                    <button type="submit" id="send-sound-request" class="request-sounds-button">Lets Goo!</button>
                 </div>
                 <p id="error-message" class="error"></p>
             </form>
@@ -84,58 +103,67 @@
             <select id="y_axis_map_descriptors_selector" onchange="changeAxisAttribute()">
             </select>
         </div>
-        <div class="center-con">
-            <div class="round">
-                <div id="cta">
-                    <span class="arrow first next "></span>
-                    <span class="arrow second next "></span>
-                </div>
-            </div>
-            <div id="sidebar">
-                <p class="transformation-tittle">Sounds Transformations</p>
-                <div id="progressContainer">
-                    <canvas id="canvasProgress" class="waveform-progress"></canvas>
-                </div>
-                    
-                <div class="inputs-containers">
-                    <div id="play-sound-button" onclick="playAudio()">
-                        <img class="play-icon" src="https://img.icons8.com/ios/50/FFFFFF/circled-play--v1.png" alt="circled-play--v1"/>
-                    </div>
-                    <input type="range" min="-40" max="40" step="0.1" class="transform-inputs">
-                    <input type="range" min="-40" max="40" step="0.1" class="transform-inputs">
-                    <input type="range" min="-40" max="40" step="0.1" class="transform-inputs">
-                    <input type="range" min="-40" max="40" step="0.1" class="transform-inputs">
-                    <input type="range" min="-40" max="40" step="0.1" class="transform-inputs">
-                </div>
-            </div>
-        </div>        
         <div id="info_placeholder">
             <div class="scroll-info-placeholder"></div>
         </div>
         <div id="waveform" style="display: none !important;"></div>
+        <div>
+            <button id="applyEffectsButton" class="request-sounds-button">Sound Effects</button>
+        </div>
+    
+        <div class="sound-effects-popup" id="effectsPopup">
+            <p class="transformation-tittle">Sounds Transformations</p>
+            <div id="progressContainer">
+                <canvas id="canvasProgress" class="waveform-progress"></canvas>
+            </div>
+    
+            <div class="columns">
+                <div class="column">
+                    <div id="play-sound-button" onclick="playAudio()">
+                        <img class="play-icon" src="https://img.icons8.com/ios/50/FFFFFF/circled-play--v1.png" alt="circled-play--v1"/>
+                    </div>
+                </div>
+                <div class="column controls-column">
+                    <div class="control-group">
+                        <label for="speedControl">Speed:</label>
+                        <input type="range" id="speedControl" min="0.5" max="2.0" value="1.0" step="0.1">
+                        <span id="speedValue">x1.0</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="gainControl">Volume:</label>
+                        <input type="range" id="gainControl" min="0" max="5" step="0.2" value="1">
+                        <span id="gainValue">1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="overlay" id="overlay"></div>
     </div>
     <hr>
     
-    <div id="instructions_box" class="box">
+    <!-- <div id="instructions_box" class="box">
         Click on points to listen to sounds<br>
         Click on the area to listen to generate new sounds<br>
         Click + drag to navigate the map<br>
         Scroll wheel to zoom<br>
-    </div>  
+    </div>   -->
 
-    <div id="x_axis_box" class="box">
-    </div>
+    <div id="x_axis_box" class="box"></div>
 
-    <div id="y_axis_box" class="box">
-    </div>
-
-    
+    <div id="y_axis_box" class="box"></div>
+        
     <div id="sound_info_box" class="box">
         <canvas id="waveform-generated" class="waveform-style"></canvas>
         <canvas id="spectro" class="spectrogram" style="display: none;"></canvas>
         <div id="sound_info_content"></div>
         <div id="switch-images-button" class="switch-button">
         </div>
+    </div>
+
+    <div id="snackbar">
+        <span id="snackbarMessage"></span>
+        <button id="closeSnackbar" onclick="closeSnackbar()">X</button>
     </div>
 
     <div id="logo_box" class="box">
@@ -158,7 +186,7 @@
     <script src="js/audioengine.js"></script>
     <script src="js/tsne.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/transformations.js"></script>
+    <script src="js/soundsEffects.js"></script>
     <script src="js/vaeUtils.js"></script>
     <script src="js/all.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia-wasm.web.js"></script>

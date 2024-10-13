@@ -44,41 +44,6 @@ AudioManager.prototype.stopAllBufferNodes = function () {
   }
 };
 
-// Play Audio
-function playAudio() {
-  const audioContext = new AudioContext();
-  const audioSource = audioContext.createBufferSource();
-
-  // Buffer de audio con los datos muestreados
-  const audioBuffer = audioContext.createBuffer(1, currentSound.length, audioContext.sampleRate);
-  const channelData = audioBuffer.getChannelData(0);
-  channelData.set(currentSound);
-  audioSource.buffer = audioBuffer;
-
-  audioSource.connect(audioContext.destination);
-
-  audioSource.onended = function() {
-    updateProgress(1);
-  };
-  audioSource.onended();
-
-  audioSource.start();
-
-  // Progreso de reproducción en tiempo real
-  let animationId = requestAnimationFrame(updateProgressLoop);
-
-  function updateProgressLoop() {
-    const progress = audioContext.currentTime / audioBuffer.duration;
-    updateProgress(progress);
-
-    if (progress >= 1) {
-      cancelAnimationFrame(animationId);
-    } else {
-      animationId = requestAnimationFrame(updateProgressLoop);
-    }
-  }
-}
-
 /* Distance measures */
 
 function computeEuclideanDistance(p1x, p1y, p2x, p2y) {
@@ -401,7 +366,7 @@ function hideUploadVAEs() {
 
 // Check sounds request durations
 function checkDurations() {
-  const submitBtn = document.getElementById("submit-btn");
+  const sendSoundRequest = document.getElementById("send-sound-request");
   const errorMessage = document.getElementById("error-message");
   const input_minDuration = parseInt(
     document.getElementById("query_min_time_input").value
@@ -421,47 +386,11 @@ function checkDurations() {
   }
 
   if (minDuration >= maxDuration) {
-    submitBtn.disabled = true;
+    sendSoundRequest.disabled = true;
     errorMessage.innerHTML = mensajeError;
     errorMessage.style.display = "block";
   } else {
-    submitBtn.disabled = false;
+    sendSoundRequest.disabled = false;
     errorMessage.style.display = "none";
-  }
-}
-
-// Slide button functions
-function slideButton(expanded){
-  const arrowElements = document.querySelectorAll("#cta .arrow");
-  const nextElements = document.querySelectorAll(".next");
-
-  if (expanded) {
-    if (queryForm.style.display === "block") {
-      hideForm();
-    }
-  
-    if (uploadVAEs.style.display === "block") {
-      hideUploadVAEs();
-    }
-  
-    nextElements.forEach(element => {
-      element.style.transform = "none";
-    });
-    arrowElements.forEach(element => {
-      element.style.left = "30%";
-    });
-    transformationInputs.forEach(element => {
-      element.style.display = "block";
-    });
-  } else {
-    nextElements.forEach(element => {
-      element.style.transform = "";
-    });
-    arrowElements.forEach(element => {
-      element.style.left = "20%";
-    });
-    transformationInputs.forEach(element => {
-      element.style.display = "none";
-    });
   }
 }
