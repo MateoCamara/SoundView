@@ -26,7 +26,7 @@ let snackbar = document.getElementById("snackbar");
 let snackbarMessage = document.getElementById("snackbarMessage");
 // Snackbar FIN
 
-//Menú Hamburguesa
+// Hamburger menu
 const menuButton = document.querySelector(".menu-button");
 const menuOptions = document.querySelector(".menu-options");
 const menuContainer = document.querySelector(".menu-container");
@@ -34,18 +34,18 @@ const menuHamburguesa = document.getElementById("menuHamburguesa");
 let menuVisible = false;
 const queryForm = document.getElementById("query-form");
 const uploadVAEs = document.getElementById('upload-vaes-div');
-// Menú Hamburguesa FIN
+// Hamburger menu END
 
-// Transformacion de sonidos
+// Sound transformation
 const applyEffectsButton = document.getElementById('applyEffectsButton');
 const gainControl = document.getElementById('gainControl');
 const gainValue = document.getElementById('gainValue');
 const speedControl = document.getElementById('speedControl');
 const speedValue = document.getElementById('speedValue');
 const effectsPopup = document.getElementById('effectsPopup');
-// Transformacion de sonidos FIN
+// Sound transformation END
 
-// Para el espectrograma
+// Spectrogram
 const heatmapColors = [
   '#000000', '#250066', '#4B0096', '#7200B6', '#9C00E6',
   '#C601E6', '#ED01C2', '#FF00A2', '#FF007F', '#FF005A',
@@ -66,7 +66,7 @@ let dBData = [];
 let maxValSoundsDB = [];
 const canvasSpectrogram = document.getElementById('spectro');
 const ctxSpectrogram = canvasSpectrogram.getContext('2d');
-// Para el espectrograma
+// Spectrogram
 
 // Variational Autoencoder stuff
 let encoderModel = undefined;
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Efectos de Sonido
+// Sound effects
 applyEffectsButton.addEventListener('click', () => {
   effectsPopup.style.display = DISPLAY_BLOCK;
   overlay.style.display = DISPLAY_BLOCK;
@@ -358,14 +358,14 @@ overlay.addEventListener('click', () => {
   effectsPopup.style.display = 'none';
   overlay.style.display = 'none';
   if (audioSource) {
-      audioSource.stop(); // Si se esta reproduciendo el audio al salir de la transformacion de sonidos, se para.
+      audioSource.stop(); // stop playback if audio is still playing when leaving the panel.
   }    
 });
 
 effectsPopup.addEventListener('click', (event) => {
   event.stopPropagation();
 });
-// Efectos de Sonido FIN
+// Sound effects END
 
 switchButton.addEventListener("click", function() {
   canvasWaveform.style.display = (canvasWaveform.style.display === DISPLAY_NONE) ? DISPLAY_BLOCK : DISPLAY_NONE;
@@ -666,7 +666,7 @@ function load_data_from_fs_json(data) {
       if(!querySoundsRequested){
         querySoundsRequested = default_query;
       }
-      const message = `Couldn´t find "${querySoundsRequested}" sounds in Freesound.`;
+      const message = `Couldn't find "${querySoundsRequested}" sounds in Freesound.`;
       showSnackbar(message + " Please, try again with another sound!");
       throw new Error(message)
     }
@@ -717,21 +717,21 @@ function load_data_from_fs_json(data) {
           finalData.map((row) => row[colIndex])
         );
         
-        // Para el espectrograma
+        // Spectrogram
         const stftAbs = tf.abs(mcltspecTransposed);
 
-        // Convertir a decibelios (escala logarítmica)
+        // Convert to decibels (logarithmic scale)
         const stftDb = tf.tidy(() => {
           const minAmp = tf.max(stftAbs).div(1e6).clipByValue(1, Infinity);
           const logSpec = tf.log(stftAbs.add(minAmp));
           return logSpec.mul(10).div(tf.log(tf.scalar(10)));
         });
                     
-        // Obtener los valores de amplitud del espectrograma
+        // Get the spectrogram amplitude values
         const stftData = stftDb.arraySync();
         dBData.push(stftData);
         maxValSoundsDB.push(tf.max(stftData).dataSync()[0]);
-        // Para el espectrograma
+        // Spectrogram
 
         let mclt2Dspec = spectrogram(mcltspecTransposed);
         let { mu_latent_space, log_variance_latent_space } =
@@ -785,6 +785,10 @@ function checkSelectSound(x, y) {
   if (min_dist < 0.02) {
     selectSound(selected_sound, spectro_selected_sound, max_value_spectro, waveform_selected_Sound);
   } else {
+    // Generation runs a synchronous decode + inverse STFT (~a few seconds), so
+    // show feedback and defer the heavy work one tick to let the UI paint first.
+    showSnackbar("Generating a new sound…");
+    setTimeout(function () {
     let dim1LatentSpace = x * (map_xy_x_max - map_xy_x_min) + map_xy_x_min;
     let dim2LatentSpace =
       (y - 1) * -(map_xy_y_max - map_xy_y_min) + map_xy_y_min;
@@ -857,11 +861,13 @@ function checkSelectSound(x, y) {
         sampledSounds.push(sound);
         playGeneratedSound(sound.waveform);
         showGeneratedSoundInfo(sound.waveform);
+        closeSnackbar();
       },
       predicted_spectrogram,
       "2D",
       512
     );
+    }, 30);
   }
 }
 
@@ -973,7 +979,7 @@ function updateProgress(progress) {
 
   drawWaveform(currentSoundSamples, canvasProgress, ctxProgress)
 
-  // Pintar progreso en color naranja
+  // Draw progress in orange
   ctxProgress.strokeStyle = progressColor;
   ctxProgress.beginPath();
   ctxProgress.moveTo(0, (1 + currentSoundSamples[0]) * canvasProgress.height / 2);
@@ -987,7 +993,7 @@ function updateProgress(progress) {
   ctxProgress.stroke();
 }
 
-// Para el espectrograma
+// Spectrogram
 function getColorFromValue(value, maxValue) {
   const normalizedValue = value / maxValue;
   const colorIndex = Math.floor(normalizedValue * (heatmapColors.length - 1));

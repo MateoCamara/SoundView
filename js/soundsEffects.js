@@ -36,7 +36,7 @@ function playAudio() {
         audioSource.buffer = audioBuffer;
         audioSource.playbackRate.value = speedControl.value;
 
-        // Crear y conectar el nodo de ganancia
+        // Create and connect the gain node
         gainNode = audioContext.createGain();
         gainNode.gain.value = gainControl.value;
         audioSource.connect(gainNode);
@@ -48,7 +48,7 @@ function playAudio() {
 
         audioSource.start();
 
-        // Progreso de reproducción en tiempo real
+        // Real-time playback progress
         let animationId = requestAnimationFrame(updateProgressLoop);
 
         function updateProgressLoop() {
