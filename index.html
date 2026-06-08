@@ -20,22 +20,24 @@
         </div>
     </div>
 
-    <div id="tutorial-popup" class="tutorial-popup">
+    <div id="tutorial-popup" class="tutorial-popup" style="display: none;">
         <div class="tutorial-popup-content">
-            <h2>Instrucciones</h2>
+            <h2>Instructions</h2>
             <div class="tutorial-popup-text">
-                <p>Bienvenido a Intellimixer!!</p>
+                <p>Welcome to Intellimixer!</p>
                 <br>
-                <p>Tal vez te venga bien una ayudita antes de empezar a utilizarlo. Te haré una breve descripción del proyecto y su flujo principal.</p>
+                <p>A quick guide before you start. Sounds are placed on a 2D map by
+                    the dimensions of a Variational Autoencoder's latent space, so
+                    similar-sounding clips sit close together.</p>
                 <br>
                 <p>Click on points to listen to sounds<br>
-                    Click on the area to generate new sounds<br>
+                    Click on an empty area to generate a new sound<br>
                     Click + drag to navigate the map<br>
                     Scroll wheel to zoom
                 </p>
-                <br>    
+                <br>
             </div>
-            <button id="close-tutorial" class="tutorial-button">Entendido</button>
+            <button id="close-tutorial" class="tutorial-button">Got it</button>
         </div>
     </div>
 
@@ -44,7 +46,7 @@
             <div id="username-container" class="username-style">
                 <div id="user-column">
                   <div id="userContainer">
-                    Bienvenido, <span id="userName"></span>
+                    Welcome, <span id="userName"></span>
                   </div>
                 </div>
             </div>
