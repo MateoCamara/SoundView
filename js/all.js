@@ -113,6 +113,10 @@ let current_it_number = 0;
 let epsilon = 10;
 let perplexity = 10;
 let tsne = undefined;
+// Map layout: "tsne" (default) spreads points with a 2-D t-SNE of the latents;
+// "dims" maps two chosen latent dimensions to X/Y (via the axis selectors).
+let LAYOUT_MODE = "tsne";
+let tsne_positions = null;
 let max_xy_iterations = 50;
 let map_xy_x_max = undefined;
 let map_xy_x_min = undefined;
@@ -231,11 +235,63 @@ function loadOfflineSounds() {
         log_variance_latent_spaces.push(d.logvar || d.mu.map(() => 0));
       }
       logInfo("Loaded " + numFiles + " sounds.");
+      if (LAYOUT_MODE === "tsne") {
+        computeTsneLayout();
+      }
     })
     .catch((error) => {
       console.error(error);
       showSnackbar("Could not load the bundled sound map.");
     });
+}
+
+// Run a 2-D t-SNE over the latent means to spread the points across the map
+// (the raw latent dimensions tend to cluster). Stepped in small batches so the
+// UI stays responsive and the layout animates into place as it converges.
+function computeTsneLayout() {
+  logInfo("Computing map layout (t-SNE)...");
+  tsne_positions = null;
+  let opt = {
+    epsilon: 10,
+    perplexity: Math.max(5, Math.min(30, Math.floor(mu_latent_spaces.length / 4))),
+    dim: 2,
+  };
+  let t = new tsnejs.tSNE(opt);
+  t.initDataRaw(mu_latent_spaces);
+  let steps = 0;
+  const maxSteps = 500;
+
+  function normalizeSolution(Y) {
+    let xs = Y.map((p) => p[0]);
+    let ys = Y.map((p) => p[1]);
+    let xmin = Math.min.apply(null, xs);
+    let xmax = Math.max.apply(null, xs);
+    let ymin = Math.min.apply(null, ys);
+    let ymax = Math.max.apply(null, ys);
+    return Y.map((p) => [
+      (p[0] - xmin) / (xmax - xmin || 1),
+      (p[1] - ymin) / (ymax - ymin || 1),
+    ]);
+  }
+
+  function stepChunk() {
+    if (LAYOUT_MODE !== "tsne") return; // user switched to raw-dimension mode
+    for (let k = 0; k < 10 && steps < maxSteps; k++) {
+      t.step();
+      steps++;
+    }
+    tsne_positions = normalizeSolution(t.getSolution());
+    // Re-run the placement block in loop() with the latest positions.
+    all_loaded = false;
+    current_it_number = max_xy_iterations; // skip the intro zoom on later updates
+    if (steps < maxSteps) {
+      setTimeout(stepChunk, 0);
+    } else {
+      current_it_number = 0; // final layout: play the intro animation once
+      logInfo("Map layout ready.");
+    }
+  }
+  stepChunk();
 }
 
 function getSounds(){
@@ -419,6 +475,9 @@ function closeSnackbar() {
 }
 
 function changeAxisAttribute() {
+  // Selecting a latent dimension switches from the t-SNE layout to mapping that
+  // dimension directly onto an axis.
+  LAYOUT_MODE = "dims";
   all_loaded = false;
   current_it_number = 0;
   setMapDescriptor();
@@ -483,9 +542,21 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
 (function loop() {
   // This is called when code reaches this point
   // Get sound's xy position and scale it smoothly to create an animation effect
-  if (mu_latent_spaces.length === numFiles && !all_loaded) {
-    let x = mu_latent_spaces.map((ls) => ls[map_features[0]]);
-    let y = mu_latent_spaces.map((ls) => ls[map_features[1]]);
+  if (
+    mu_latent_spaces.length === numFiles &&
+    !all_loaded &&
+    (LAYOUT_MODE !== "tsne" || tsne_positions)
+  ) {
+    // Map placement. Default ("tsne") spreads the points with a 2-D t-SNE of the
+    // latents; "dims" maps two chosen latent dimensions straight to X/Y.
+    let x, y;
+    if (LAYOUT_MODE === "tsne") {
+      x = tsne_positions.map((p) => p[0]);
+      y = tsne_positions.map((p) => p[1]);
+    } else {
+      x = mu_latent_spaces.map((ls) => ls[map_features[0]]);
+      y = mu_latent_spaces.map((ls) => ls[map_features[1]]);
+    }
 
     map_xy_x_max = Math.max.apply(null, x);
     map_xy_x_min = Math.min.apply(null, x);
@@ -499,14 +570,16 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
         1 - (y[i] - map_xy_y_min) / (map_xy_y_max - map_xy_y_min);
     }
 
-    for (i in sampledSounds) {
-      sampledSounds[i].computed_x =
-        (sampledSounds[i].latentSpace[map_features[0]] - map_xy_x_min) /
-        (map_xy_x_max - map_xy_x_min);
-      sampledSounds[i].computed_y =
-        1 -
-        (sampledSounds[i].latentSpace[map_features[1]] - map_xy_y_min) /
-          (map_xy_y_max - map_xy_y_min);
+    if (LAYOUT_MODE === "dims") {
+      for (i in sampledSounds) {
+        sampledSounds[i].computed_x =
+          (sampledSounds[i].latentSpace[map_features[0]] - map_xy_x_min) /
+          (map_xy_x_max - map_xy_x_min);
+        sampledSounds[i].computed_y =
+          1 -
+          (sampledSounds[i].latentSpace[map_features[1]] - map_xy_y_min) /
+            (map_xy_y_max - map_xy_y_min);
+      }
     }
 
     all_loaded = true;
@@ -550,7 +623,7 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
 function SoundFactory(id, preview_url, analysis, url, name, username, image) {
   this.x = Math.random();
   this.y = Math.random();
-  this.rad = 15;
+  this.rad = 6;
   this.mod_position = Math.random();
   this.mod_inc = 0.1;
   this.mod_amp = default_point_modulation;
@@ -575,7 +648,7 @@ function SoundFactoryGeneratedAudios(id, waveform, x, y, latentSpace) {
   this.waveform = waveform;
   this.x = x;
   this.y = y;
-  this.rad = 15;
+  this.rad = 6;
   this.mod_amp = default_point_modulation;
   this.mod_position = Math.random();
   this.mod_inc = 0.1;
@@ -748,8 +821,13 @@ function checkSelectSound(x, y) {
     // }
     // multilateralDim = result_array;
 
-    multilateralDim[map_features[0]] = dim1LatentSpace;
-    multilateralDim[map_features[1]] = dim2LatentSpace;
+    // In "dims" mode the screen axes are two latent dimensions, so we can pin
+    // those coordinates directly. In "tsne" mode the screen has no direct latent
+    // axis, so we keep the pure multilateration estimate.
+    if (LAYOUT_MODE === "dims") {
+      multilateralDim[map_features[0]] = dim1LatentSpace;
+      multilateralDim[map_features[1]] = dim2LatentSpace;
+    }
 
     //  multilateralDim = [-0.70845157,  0.37552756, -1.4685907 ,  0.18429044,  0.12212666,
     //  1.820008  ,  0.5608268 , -0.78984535,  0.5061305 ,  0.07133903,
@@ -773,6 +851,9 @@ function checkSelectSound(x, y) {
           (y = y),
           (latentSpace = multilateralDim)
         );
+        // Draw the generated point where the user clicked (t-SNE has no inverse).
+        sound.computed_x = x;
+        sound.computed_y = y;
         sampledSounds.push(sound);
         playGeneratedSound(sound.waveform);
         showGeneratedSoundInfo(sound.waveform);
@@ -972,20 +1053,6 @@ function draw() {
     let sound = sounds[i];
     let disp_x, disp_y;
     [disp_x, disp_y] = normCoordsToDisplayCoords(sound.x, sound.y);
-
-    let z = i;
-    z == sounds.length - 1 ? (z = 0) : (z = 1 + parseInt(i));
-    let nextSound = sounds[z];
-    let nextX, nextY;
-    [nextX, nextY] = normCoordsToDisplayCoords(nextSound.x, nextSound.y);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#ffffff";
-    ctx.beginPath(); // Start a new path
-    ctx.moveTo(disp_x, disp_y); // Move the pen to (30, 50)
-    ctx.lineTo(nextX, nextY); // Draw a line to (150, 100)
-    ctx.stroke();
-    ctx.closePath();
 
     if (!sound.selected) {
       ctx.fillStyle = sound.rgba;
