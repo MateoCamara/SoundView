@@ -84,7 +84,7 @@ function onMouseMove(event){
         if (zoom_factor < min_zoom) {
             zoom_factor = min_zoom;
         } else if (zoom_factor > max_zoom){
-            zoom_factor = maz_zoom;
+            zoom_factor = max_zoom;
         }
     }
 
