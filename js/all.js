@@ -7,6 +7,9 @@
 const CLIENT_ID = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.clientId) || "";
 const CLIENT_SECRET = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.clientSecret) || "";
 const REDIRECT_URL = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.redirectUrl) || window.location.href.split("?")[0];
+// Offline-first: load the bundled sound map without requiring a Freesound login.
+// Set window.FREESOUND_CONFIG.enableLogin = true to also offer live Freesound search.
+let OFFLINE_MODE = true;
 let AUTHORIZATION_CODE;
 let accessToken;
 let loginRedirected = false;
@@ -193,7 +196,46 @@ function start() {
   maxValSoundsDB = [];
   soundsWaveforms = [];
 
-  getSounds();
+  if (OFFLINE_MODE) {
+    loadOfflineSounds();
+  } else {
+    getSounds();
+  }
+}
+
+// Offline-first: load the bundled, pre-encoded sound map (no login, no Freesound
+// call). Each entry carries its VAE latent mean (mu) so the map and the
+// generate-a-sound feature work fully client-side; audio is streamed on demand
+// from the public Freesound preview URL when a point is clicked.
+function loadOfflineSounds() {
+  logInfo("Loading bundled sound map.");
+  fetch("./files/latents.json")
+    .then((r) => r.json())
+    .then((data) => {
+      numFiles = data.length;
+      sounds = [];
+      mu_latent_spaces = [];
+      log_variance_latent_spaces = [];
+      for (const d of data) {
+        const sound = new SoundFactory(
+          d.id,
+          d.audio,
+          d.analysis || {},
+          d.url,
+          d.name,
+          d.username,
+          d.image
+        );
+        sounds.push(sound);
+        mu_latent_spaces.push(d.mu);
+        log_variance_latent_spaces.push(d.logvar || d.mu.map(() => 0));
+      }
+      logInfo("Loaded " + numFiles + " sounds.");
+    })
+    .catch((error) => {
+      console.error(error);
+      showSnackbar("Could not load the bundled sound map.");
+    });
 }
 
 function getSounds(){
@@ -307,11 +349,18 @@ function showUser(userName) {
   userNameElement.textContent = userName;
 }
 
-// Login popup
+// On load: in offline mode, start the bundled demo immediately (no login gate).
+// Otherwise show the Freesound login popup.
 window.onload = function () {
-  overlay.style.display = DISPLAY_BLOCK;
-
-  popup.style.display = DISPLAY_BLOCK;
+  if (OFFLINE_MODE) {
+    // Offline demo starts from init() once the models are ready; just hide the
+    // login gate here.
+    popup.style.display = DISPLAY_NONE;
+    overlay.style.display = DISPLAY_NONE;
+  } else {
+    overlay.style.display = DISPLAY_BLOCK;
+    popup.style.display = DISPLAY_BLOCK;
+  }
 };
 
 let formSubmitHandler = function formSubmitHandler(event) {
@@ -423,6 +472,12 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
   initLantentSpaceVariableSelector(encoderModel.outputShape[0][1]);
   setMapDescriptor(true);
   update_axis_labels();
+  // Now that the models are loaded and the latent-dimension selectors are
+  // populated, kick off the offline demo (avoids a race where start() ran before
+  // map_features had valid dimension indices).
+  if (OFFLINE_MODE) {
+    start();
+  }
 })();
 
 (function loop() {
@@ -739,7 +794,13 @@ function selectSound(selected_sound, spectro_selected_sound, max_value_spectro, 
     playGeneratedSound(selected_sound.waveform);
     showGeneratedSoundInfo(selected_sound.waveform);
   } else {
-    audio_manager.loadSound(selected_sound.id, selected_sound.preview_url);
+    if (OFFLINE_MODE) {
+      // Stream the Freesound preview through an <audio> element: cross-origin
+      // media playback is allowed without CORS, unlike fetch()/decodeAudioData.
+      play_sound_from_url(selected_sound.preview_url);
+    } else {
+      audio_manager.loadSound(selected_sound.id, selected_sound.preview_url);
+    }
     showSoundInfo(selected_sound, spectro_selected_sound, max_value_spectro, waveform_selected_Sound);
   }
   last_selected_sound_id = selected_sound.id;
@@ -782,28 +843,37 @@ function showSoundInfo(sound, spectro_selected_sound, max_value_spectro, wavefor
     "</a>";
     const soundInfoContent = document.getElementById("sound_info_content");
 
-  // Para el espectrograma. Representar el espectrograma en el lienzo (canvas)
-  for (let y = 0; y < spectro_selected_sound.length; y++) {
-    for (let x = 0; x < spectro_selected_sound[y].length; x++) {
-      const colorValue = spectro_selected_sound[y][x];
-      const color = getColorFromValue(colorValue, max_value_spectro);
-      ctxSpectrogram.fillStyle = color;
-      ctxSpectrogram.fillRect(x, y, 1, 1);
+  // Draw the spectrogram onto the canvas (only when precomputed data exists;
+  // the offline map streams audio on demand and has no per-sound spectrogram).
+  if (spectro_selected_sound && spectro_selected_sound.length) {
+    for (let y = 0; y < spectro_selected_sound.length; y++) {
+      for (let x = 0; x < spectro_selected_sound[y].length; x++) {
+        const colorValue = spectro_selected_sound[y][x];
+        const color = getColorFromValue(colorValue, max_value_spectro);
+        ctxSpectrogram.fillStyle = color;
+        ctxSpectrogram.fillRect(x, y, 1, 1);
+      }
     }
   }
-// Para el espectrograma
-  let audioData = new Float32Array(waveform_selected_Sound);
-  canvasWaveform.style.display = DISPLAY_BLOCK;
-  canvasWaveform.width = soundInfoBox.offsetWidth;
-  canvasWaveform.height = 100;
-  soundInfoBox.appendChild(canvasWaveform);
-  drawWaveform(audioData, canvasWaveform, ctxWaveform);
+
+  if (waveform_selected_Sound && waveform_selected_Sound.length) {
+    let audioData = new Float32Array(waveform_selected_Sound);
+    canvasWaveform.style.display = DISPLAY_BLOCK;
+    canvasWaveform.width = soundInfoBox.offsetWidth;
+    canvasWaveform.height = 100;
+    soundInfoBox.appendChild(canvasWaveform);
+    drawWaveform(audioData, canvasWaveform, ctxWaveform);
+  } else {
+    canvasWaveform.style.display = DISPLAY_NONE;
+  }
   soundInfoContent.innerHTML = html;
 
-  //Para la transformacion
-  canvasProgress.width = progressContainer.offsetWidth;
-  canvasProgress.height = 100;
-  drawWaveform(audioData, canvasProgress, ctxProgress);
+  // Progress waveform for the effects panel (only when we have the samples).
+  if (waveform_selected_Sound && waveform_selected_Sound.length) {
+    canvasProgress.width = progressContainer.offsetWidth;
+    canvasProgress.height = 100;
+    drawWaveform(new Float32Array(waveform_selected_Sound), canvasProgress, ctxProgress);
+  }
 }
 
 function drawWaveform(data, waveCanvas, waveCtx) {
