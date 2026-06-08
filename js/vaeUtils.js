@@ -9,7 +9,9 @@ function adjustAudioToExpectedSize(
     adjustedWaveform = waveform.slice(0, expectedDuration);
   } else {
     let auxZeros = new Array(expectedDuration - waveform.length).fill(0);
-    adjustedWaveform = waveform.push(...auxZeros);
+    // Array.push returns the new length, not the array, so build the padded
+    // waveform with concat instead of assigning the push() return value.
+    adjustedWaveform = waveform.concat(auxZeros);
   }
   return adjustedWaveform;
 }

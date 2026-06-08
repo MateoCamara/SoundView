@@ -7,6 +7,18 @@ if (!context.createGain)
 context.gainNode = context.createGain();
 context.gainNode.connect(context.destination);
 
+// Browsers start AudioContexts in a "suspended" state and only allow them to
+// resume after a user gesture (autoplay policy). Resume any suspended context on
+// the first interaction so sounds actually play.
+function resumeAudioContexts() {
+  if (context.state === "suspended") context.resume();
+  if (typeof audioContext !== "undefined" && audioContext.state === "suspended")
+    audioContext.resume();
+}
+["click", "keydown", "touchstart"].forEach((evt) =>
+  window.addEventListener(evt, resumeAudioContexts, { passive: true })
+);
+
 // shim layer with setTimeout fallback
 window.requestAnimFrame = (function(){
 return  window.requestAnimationFrame       || 
