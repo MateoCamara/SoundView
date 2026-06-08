@@ -1,9 +1,12 @@
 /* Global variables and objects */
 
-// Login data
-const CLIENT_ID = "J3QbU7A9Mt9wQbqYMRo9";
-const CLIENT_SECRET = "TEWsO3ETlZ8aDPuvWYfqPyhYo97sl5COg9xEz4mO";
-const REDIRECT_URL = "https://adrianbalda.github.io/Intellimixer/";
+// Login data (optional Freesound integration).
+// Configure these via window.FREESOUND_CONFIG before this script runs to enable
+// live Freesound search. Never commit a real client secret to a frontend repo:
+// the OAuth2 "implicit"/PKCE flow should be used so no secret is needed client-side.
+const CLIENT_ID = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.clientId) || "";
+const CLIENT_SECRET = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.clientSecret) || "";
+const REDIRECT_URL = (window.FREESOUND_CONFIG && window.FREESOUND_CONFIG.redirectUrl) || window.location.href.split("?")[0];
 let AUTHORIZATION_CODE;
 let accessToken;
 let loginRedirected = false;
@@ -410,15 +413,11 @@ function initLantentSpaceVariableSelector(latentSpaceDimension) {
   // This is called when code reaches this point
   window.addEventListener("keydown", onKeyDown, false);
   window.addEventListener("keyup", onKeyUp, false);
-  // get encoder tensorflow model
-  encoderModel = await tf.loadLayersModel(
-    "https://mateocamara.com/intellimixer/models_tfg/encoder_model/model.json"
-  );
+  // get encoder tensorflow model (bundled locally so the demo works offline)
+  encoderModel = await tf.loadLayersModel("./models/encoder_model/model.json");
   logInfo("Loaded default encoder.");
-  // // get decoder tensorflow model
-  decoderModel = await tf.loadLayersModel(
-    "https://mateocamara.com/intellimixer/models_tfg/decoder_model/model.json"
-  );
+  // get decoder tensorflow model
+  decoderModel = await tf.loadLayersModel("./models/decoder_model/model.json");
   logInfo("Loaded default decoder.");
   // Add the number of variables in latent space to html select tag items
   initLantentSpaceVariableSelector(encoderModel.outputShape[0][1]);
