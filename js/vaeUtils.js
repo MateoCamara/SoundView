@@ -189,12 +189,20 @@ async function convertPredictedSpectrogramIntoAudio(
     }
   }
 
-  let reconstructedSpecTransposed = reconstructedSpec[0].map((_, colIndex) =>
-    reconstructedSpec.map((row) => row[colIndex])
+  // The decoder gives us BOTH magnitude and phase, so we can invert the
+  // spectrogram directly with a single ISTFT pass. The previous code called an
+  // iterative Griffin-Lim that (a) threw away the magnitude and re-randomized the
+  // phase, (b) had its per-iteration phase update shadowed by a block-scoped
+  // variable, and (c) leaked thousands of tensors over 100 iterations — which
+  // froze the page. A direct inverse is both correct here and fast.
+  let realParts = reconstructedSpec.map((frame) =>
+    frame.map((c) => (c && typeof c.re === "number" ? c.re : Number(c)))
   );
-
-  let signal = await griffinLim(reconstructedSpecTransposed, numIterations=100, windowLength=512, hopLength=256);
-  callback(signal)
+  let imagParts = reconstructedSpec.map((frame) =>
+    frame.map((c) => (c && typeof c.im === "number" ? c.im : 0))
+  );
+  let signal = istft_(realParts, imagParts);
+  callback(signal);
 
   return signal;
 }
